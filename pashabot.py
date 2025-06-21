@@ -173,7 +173,7 @@ def main():
     updater.start_polling()
     updater.idle()
 
-ifrom flask import Flask, request
+from flask import Flask, request
 from telegram import Bot, Update
 from telegram.ext import Dispatcher
 
