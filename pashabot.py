@@ -173,10 +173,7 @@ def main():
     updater.start_polling()
     updater.idle()
 
-if __name__ == "__main__":
-    main()
-    # FLASK Y WEBHOOK PARA RAILWAY (NO MODIFICA TU LÓGICA)
-from flask import Flask, request
+ifrom flask import Flask, request
 from telegram import Bot, Update
 from telegram.ext import Dispatcher
 
@@ -184,7 +181,7 @@ app = Flask(__name__)
 bot = Bot(token=TELEGRAM_TOKEN)
 dispatcher = Dispatcher(bot, None, use_context=True)
 
-# Solo vuelve a registrar tus handlers (no cambia funciones)
+# Registrar los handlers otra vez
 dispatcher.add_handler(CommandHandler("start", start))
 dispatcher.add_handler(CommandHandler("check", check))
 dispatcher.add_handler(MessageHandler(Filters.photo | Filters.video, handle_media))
@@ -205,18 +202,4 @@ def webhook():
 if __name__ == "__main__":
     bot.set_webhook(f"{os.getenv('RAILWAY_URL')}/{TELEGRAM_TOKEN}")
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
-    from flask import Flask
-import threading
-
-app = Flask(__name__)
-
-@app.route('/')
-def home():
-    return "Pasha Bot is running 💖"
-
-def run():
-    app.run(host='0.0.0.0', port=8080)
-
-threading.Thread(target=run).start()
-
 
