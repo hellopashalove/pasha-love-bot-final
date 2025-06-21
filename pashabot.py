@@ -205,4 +205,18 @@ def webhook():
 if __name__ == "__main__":
     bot.set_webhook(f"{os.getenv('RAILWAY_URL')}/{TELEGRAM_TOKEN}")
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    from flask import Flask
+import threading
+
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return "Pasha Bot is running 💖"
+
+def run():
+    app.run(host='0.0.0.0', port=8080)
+
+threading.Thread(target=run).start()
+
 
