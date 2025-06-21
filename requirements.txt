@@ -4,5 +4,7 @@ python-telegram-bot==13.14
 openai
 requests
 beautifulsoup4
+urllib3==1.26.16
+
 
 
