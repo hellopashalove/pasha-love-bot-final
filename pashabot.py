@@ -57,16 +57,22 @@ DATES = {
 }
 
 def start(update: Update, context: CallbackContext):
-    update.message.reply_text("🧁 ESTE ES EL BOT NUEVO 100% CON PRODUCTOS REALES ✨")
+    update.message.reply_text("🧱 ESTE ES EL BOT NUEVO 100% CON PRODUCTOS REALES ✨")
 
 def check(update: Update, context: CallbackContext):
     update.message.reply_text("✨ El bot está funcionando y estás usando la versión actualizada con catálogo real.")
 
 def handle_media(update: Update, context: CallbackContext):
     uid = update.message.from_user.id
+
+    # Previene que se repita el menú si ya hay un producto en curso sin categoría
+    if uid in user_context and "cat" not in user_context[uid]:
+        return
+
     media = update.message.photo[-1].file_id if update.message.photo else update.message.video.file_id
     mtype = "photo" if update.message.photo else "video"
     user_context[uid] = {"file": media, "type": mtype}
+
     kb = [[InlineKeyboardButton(cat, callback_data=f"cat|{cat}")] for cat in CATEGORIES]
     update.message.reply_text("✨ Choose your exact product:", reply_markup=InlineKeyboardMarkup(kb))
 
