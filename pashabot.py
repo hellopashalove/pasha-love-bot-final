@@ -10,17 +10,20 @@ import os
 # Cargar variables del archivo .env
 load_dotenv()
 
+# API Tokens
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 openai.api_key = os.getenv("OPENAI_API_KEY")
-RAILWAY_URL = os.getenv("RAILWAY_URL")
+
+print("🔍 TOKEN:", TELEGRAM_TOKEN)
 
 user_context = {}
 
 CATEGORIES = [
-    "Bubble Keychain", "Puffy Keychain", "Glam Keychain", "Sweet Keychain", "Teachy Keychain", "Happy Keychain", "Pasha Keychain",
-    "Love Candy Steel Tumbler", "Hearts & Kisses Water Bottle", "Love & Sip Tumbler", "Gradient Glow Tumbler", "Love Heart Sports Bottle",
-    "Plush Heart Pillow – Let Me Sleep", "XO Plush Pillow", "Velvet Heart Pillow", "Cozy Pup Blanket", "Cute & Cozy Kitchen Towel Set",
-    "Happy Vibes Coaster Collection", "Smiley Cosmetic Bag", "Smiley Tote Bag", "Hello Kitty Dinner Set"
+    "Bubble Keychain", "Puffy Keychain", "Glam Keychain", "Sweet Keychain", "Teachy Keychain", "Happy Keychain",
+    "Pasha Keychain", "Love Candy Steel Tumbler", "Hearts & Kisses Water Bottle", "Love & Sip Tumbler",
+    "Gradient Glow Tumbler", "Love Heart Sports Bottle", "Plush Heart Pillow – Let Me Sleep", "XO Plush Pillow",
+    "Velvet Heart Pillow", "Cozy Pup Blanket", "Cute & Cozy Kitchen Towel Set", "Happy Vibes Coaster Collection",
+    "Smiley Cosmetic Bag", "Smiley Tote Bag", "Hello Kitty Dinner Set"
 ]
 
 CATEGORY_DESCRIPTIONS = {
@@ -48,13 +51,13 @@ CATEGORY_DESCRIPTIONS = {
 }
 
 DATES = {
-    "02-14": "Valentine’s Day", "05-10": "Mother’s Day", "06-17": "Father’s Day",
-    "10-31": "Halloween", "12-25": "Christmas", "01-01": "New Year",
-    "spring": "Spring", "summer": "Summer", "autumn": "Autumn", "winter": "Winter", "none": ""
+    "02-14": "Valentine’s Day", "05-10": "Mother’s Day", "06-17": "Father’s Day", "10-31": "Halloween",
+    "12-25": "Christmas", "01-01": "New Year", "spring": "Spring", "summer": "Summer",
+    "autumn": "Autumn", "winter": "Winter", "none": ""
 }
 
 def start(update: Update, context: CallbackContext):
-    update.message.reply_text("🏋 ESTE ES EL BOT NUEVO 100% CON PRODUCTOS REALES ✨")
+    update.message.reply_text("🧁 ESTE ES EL BOT NUEVO 100% CON PRODUCTOS REALES ✨")
 
 def check(update: Update, context: CallbackContext):
     update.message.reply_text("✨ El bot está funcionando y estás usando la versión actualizada con catálogo real.")
@@ -72,8 +75,19 @@ def category_handler(update: Update, context: CallbackContext):
     q.answer()
     uid = q.from_user.id
     user_context[uid]["cat"] = q.data.split("|")[1]
-    kb = [[InlineKeyboardButton(f"{label}", callback_data=f"date|{date}")] for date, label in DATES.items() if date != "none"]
-    kb.append([InlineKeyboardButton("🚫 None", callback_data="date|none")])
+    kb = [
+        [InlineKeyboardButton("💖 Valentine’s Day", callback_data="date|02-14")],
+        [InlineKeyboardButton("👩‍👧 Mother’s Day", callback_data="date|05-10")],
+        [InlineKeyboardButton("👨 Father’s Day", callback_data="date|06-17")],
+        [InlineKeyboardButton("🎃 Halloween", callback_data="date|10-31")],
+        [InlineKeyboardButton("🎄 Christmas", callback_data="date|12-25")],
+        [InlineKeyboardButton("🎆 New Year", callback_data="date|01-01")],
+        [InlineKeyboardButton("🌸 Spring", callback_data="date|spring")],
+        [InlineKeyboardButton("☀️ Summer", callback_data="date|summer")],
+        [InlineKeyboardButton("🍁 Autumn", callback_data="date|autumn")],
+        [InlineKeyboardButton("❄️ Winter", callback_data="date|winter")],
+        [InlineKeyboardButton("🚫 None", callback_data="date|none")]
+    ]
     q.edit_message_text("✨ Is there a special occasion?", reply_markup=InlineKeyboardMarkup(kb))
 
 def date_handler(update: Update, context: CallbackContext):
@@ -100,46 +114,43 @@ def send_caption(uid, context: CallbackContext):
         f"Do NOT say 'English:' or 'Spanish:'. Just flow like a real creator post."
     )
     try:
-        response = openai.ChatCompletion.create(model="gpt-4", messages=[{"role": "user", "content": prompt}])
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": prompt}]
+        )
         raw = response.choices[0].message.content.strip()
         lines = [line for line in raw.splitlines() if "english" not in line.lower() and "spanish" not in line.lower()]
         caption = "\n".join(lines).strip()
     except Exception as e:
         caption = f"⚠️ Error generating caption: {e}"
-    
-    markup = InlineKeyboardMarkup([[InlineKeyboardButton("✅ Approve", callback_data="app"), InlineKeyboardButton("❌ Reject", callback_data="rej")]])
+
+    kb = [[InlineKeyboardButton("✅ Approve", callback_data="app"), InlineKeyboardButton("❌ Reject", callback_data="rej")]]
+    markup = InlineKeyboardMarkup(kb)
+
+    bot = context.bot
     if mtype == "photo":
-        context.bot.send_photo(uid, photo=file_id, caption=caption, reply_markup=markup)
+        bot.send_photo(uid, photo=file_id, caption=caption, reply_markup=markup)
     else:
-        context.bot.send_video(uid, video=file_id, caption=caption, reply_markup=markup)
+        bot.send_video(uid, video=file_id, caption=caption, reply_markup=markup)
 
 def approve_reject(update: Update, context: CallbackContext):
     q = update.callback_query
     q.answer()
-    q.edit_message_text("✅ Approved for posting" if q.data == "app" else "❌ Rejected")
+    text = "✅ Approved for posting" if q.data == "app" else "❌ Rejected"
+    q.edit_message_text(text=text)
 
-# Flask app para producción con Railway
-app = Flask(__name__)
-bot = Bot(token=TELEGRAM_TOKEN)
-dispatcher = Dispatcher(bot, None, use_context=True)
-
-dispatcher.add_handler(CommandHandler("start", start))
-dispatcher.add_handler(CommandHandler("check", check))
-dispatcher.add_handler(MessageHandler(Filters.photo | Filters.video, handle_media))
-dispatcher.add_handler(CallbackQueryHandler(category_handler, pattern="^cat\\|"))
-dispatcher.add_handler(CallbackQueryHandler(date_handler, pattern="^date\\|"))
-dispatcher.add_handler(CallbackQueryHandler(approve_reject, pattern="^(app|rej)$"))
-
-@app.route("/")
-def home():
-    return "🌸 Pasha Love Bot 24/7 🌸"
-
-@app.route(f"/{TELEGRAM_TOKEN}", methods=["POST"])
-def webhook():
-    update = Update.de_json(request.get_json(force=True), bot)
-    dispatcher.process_update(update)
-    return "OK"
+def main():
+    updater = Updater(TELEGRAM_TOKEN, use_context=True)
+    dp = updater.dispatcher
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("check", check))
+    dp.add_handler(MessageHandler(Filters.photo | Filters.video, handle_media))
+    dp.add_handler(CallbackQueryHandler(category_handler, pattern="^cat\\|"))
+    dp.add_handler(CallbackQueryHandler(date_handler, pattern="^date\\|"))
+    dp.add_handler(CallbackQueryHandler(approve_reject, pattern="^(app|rej)$"))
+    print("🌸 PASHABOT ACTUALIZADO: catálogo real y sin música 🌸")
+    updater.start_polling()
+    updater.idle()
 
 if __name__ == "__main__":
-    bot.set_webhook(f"{RAILWAY_URL}/{TELEGRAM_TOKEN}")
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    main()
