@@ -1,0 +1,17 @@
+[33mcommit c74a86d4ba5813bf0b04d48a268312acdfca1cb1[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: hellopashalove <hellopashalove@gmail.com>
+Date:   Sun Jun 22 00:18:15 2025 +0200
+
+    fix: force compatible urllib3 version
+
+[33mcommit ddab882792dc5e84dc60ada9abcf759a0e96fa3a[m
+Author: hellopashalove <hellopashalove@gmail.com>
+Date:   Sun Jun 22 00:14:22 2025 +0200
+
+    fix: updated telegram bot version
+
+[33mcommit 9e8e6a59c9e9b4fbddafa5f1018dd699cbed83a1[m
+Author: hellopashalove <hellopashalove@gmail.com>
+Date:   Sun Jun 22 00:07:10 2025 +0200
+
+     Últimos cambios para Railway

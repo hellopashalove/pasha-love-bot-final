@@ -10,7 +10,7 @@ import os
 load_dotenv()
 
 # API Tokens (ya no están visibles aquí)
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 user_context = {}
@@ -78,7 +78,7 @@ DATES = {
 }
 
 def start(update: Update, context: CallbackContext):
-    update.message.reply_text("🧁 ESTE ES EL BOT NUEVO 100% CON PRODUCTOS REALES ✨")
+    update.message.reply_text("🌿 ESTE ES EL BOT NUEVO 100% CON PRODUCTOS REALES ✨")
 
 def check(update: Update, context: CallbackContext):
     update.message.reply_text("✨ El bot está funcionando y estás usando la versión actualizada con catálogo real.")
@@ -161,7 +161,7 @@ def approve_reject(update: Update, context: CallbackContext):
     q.edit_message_text(text=text)
 
 def main():
-    updater = Updater(TELEGRAM_TOKEN, use_context=True)
+    updater = Updater(TELEGRAM_BOT_TOKEN, use_context=True)
     dp = updater.dispatcher
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("check", check))
@@ -178,7 +178,7 @@ from telegram import Bot, Update
 from telegram.ext import Dispatcher
 
 app = Flask(__name__)
-bot = Bot(token=TELEGRAM_TOKEN)
+bot = Bot(token=TELEGRAM_BOT_TOKEN)
 dispatcher = Dispatcher(bot, None, use_context=True)
 
 # Registrar los handlers otra vez
@@ -193,13 +193,12 @@ dispatcher.add_handler(CallbackQueryHandler(approve_reject, pattern="^(app|rej)$
 def home():
     return "🌸 Pasha Love Bot 24/7 🌸"
 
-@app.route(f"/{TELEGRAM_TOKEN}", methods=["POST"])
+@app.route(f"/{TELEGRAM_BOT_TOKEN}", methods=["POST"])
 def webhook():
     update = Update.de_json(request.get_json(force=True), bot)
     dispatcher.process_update(update)
     return "OK"
 
 if __name__ == "__main__":
-    bot.set_webhook(f"{os.getenv('RAILWAY_URL')}/{TELEGRAM_TOKEN}")
+    bot.set_webhook(f"{os.getenv('RAILWAY_URL')}/{TELEGRAM_BOT_TOKEN}")
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
-
