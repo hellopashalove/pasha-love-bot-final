@@ -1,23 +1,24 @@
-import random, requests, openai
-from datetime import datetime
-from bs4 import BeautifulSoup
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, Bot
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler, CallbackContext, Dispatcher
-from dotenv import load_dotenv
-from flask import Flask, request
 import os
+import random
+from datetime import datetime
+from pathlib import Path
+from dotenv import load_dotenv
+from bs4 import BeautifulSoup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler, CallbackContext
+from openai import OpenAI
 
-# Cargar variables del archivo .env
+# Cargar variables de entorno
 load_dotenv()
 
-# API Tokens
+# Claves seguras desde .env
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-openai.api_key = os.getenv("OPENAI_API_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-print("🔍 TOKEN:", TELEGRAM_TOKEN)
-
+client = OpenAI(api_key=OPENAI_API_KEY)
 user_context = {}
 
+# === CATEGORÍAS Y DESCRIPCIONES ===
 CATEGORIES = [
     "Bubble Keychain", "Puffy Keychain", "Glam Keychain", "Sweet Keychain", "Teachy Keychain", "Happy Keychain",
     "Pasha Keychain", "Love Candy Steel Tumbler", "Hearts & Kisses Water Bottle", "Love & Sip Tumbler",
@@ -56,23 +57,27 @@ DATES = {
     "autumn": "Autumn", "winter": "Winter", "none": ""
 }
 
+# === FUNCIONES PRINCIPALES ===
+
 def start(update: Update, context: CallbackContext):
-    update.message.reply_text("🧱 ESTE ES EL BOT NUEVO 100% CON PRODUCTOS REALES ✨")
+    update.message.reply_text("🏋 ESTE ES EL BOT NUEVO 100% CON PRODUCTOS REALES ✨")
 
 def check(update: Update, context: CallbackContext):
     update.message.reply_text("✨ El bot está funcionando y estás usando la versión actualizada con catálogo real.")
 
 def handle_media(update: Update, context: CallbackContext):
     uid = update.message.from_user.id
-
-    # Previene que se repita el menú si ya hay un producto en curso sin categoría
-    if uid in user_context and "cat" not in user_context[uid]:
+    msg_id = update.message.message_id
+    if uid in user_context and user_context[uid].get("last_msg") == msg_id:
         return
-
-    media = update.message.photo[-1].file_id if update.message.photo else update.message.video.file_id
-    mtype = "photo" if update.message.photo else "video"
-    user_context[uid] = {"file": media, "type": mtype}
-
+    try:
+        media = update.message.photo[-1].file_id if update.message.photo else update.message.video.file_id
+        mtype = "photo" if update.message.photo else "video"
+    except Exception as e:
+        update.message.reply_text("⚠️ No se pudo procesar la imagen/video.")
+        print(f"Media error: {e}")
+        return
+    user_context[uid] = {"file": media, "type": mtype, "last_msg": msg_id}
     kb = [[InlineKeyboardButton(cat, callback_data=f"cat|{cat}")] for cat in CATEGORIES]
     update.message.reply_text("✨ Choose your exact product:", reply_markup=InlineKeyboardMarkup(kb))
 
@@ -120,19 +125,17 @@ def send_caption(uid, context: CallbackContext):
         f"Do NOT say 'English:' or 'Spanish:'. Just flow like a real creator post."
     )
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=[{"role": "user", "content": prompt}]
         )
-        raw = response.choices[0].message.content.strip()
-        lines = [line for line in raw.splitlines() if "english" not in line.lower() and "spanish" not in line.lower()]
-        caption = "\n".join(lines).strip()
+        caption = response.choices[0].message.content.strip()
     except Exception as e:
-        caption = f"⚠️ Error generating caption: {e}"
+        print(f"❌ Error generando caption: {e}")
+        caption = "⚠️ Error generating caption. Please try again."
 
     kb = [[InlineKeyboardButton("✅ Approve", callback_data="app"), InlineKeyboardButton("❌ Reject", callback_data="rej")]]
     markup = InlineKeyboardMarkup(kb)
-
     bot = context.bot
     if mtype == "photo":
         bot.send_photo(uid, photo=file_id, caption=caption, reply_markup=markup)
@@ -146,6 +149,7 @@ def approve_reject(update: Update, context: CallbackContext):
     q.edit_message_text(text=text)
 
 def main():
+    print("🤖 Iniciando Pasha Love Bot...")
     updater = Updater(TELEGRAM_TOKEN, use_context=True)
     dp = updater.dispatcher
     dp.add_handler(CommandHandler("start", start))
@@ -154,7 +158,7 @@ def main():
     dp.add_handler(CallbackQueryHandler(category_handler, pattern="^cat\\|"))
     dp.add_handler(CallbackQueryHandler(date_handler, pattern="^date\\|"))
     dp.add_handler(CallbackQueryHandler(approve_reject, pattern="^(app|rej)$"))
-    print("🌸 PASHABOT ACTUALIZADO: catálogo real y sin música 🌸")
+    print("🌸 PASHABOT ACTUALIZADO Y LISTO 🌸")
     updater.start_polling()
     updater.idle()
 
