@@ -1,24 +1,21 @@
 import os
 import random
 from datetime import datetime
-from pathlib import Path
-from dotenv import load_dotenv
 from bs4 import BeautifulSoup
+from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler, CallbackContext
 from openai import OpenAI
 
-# Cargar variables de entorno
+# Cargar variables del archivo .env
 load_dotenv()
 
-# Claves seguras desde .env
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
 client = OpenAI(api_key=OPENAI_API_KEY)
+
 user_context = {}
 
-# === CATEGORÍAS Y DESCRIPCIONES ===
 CATEGORIES = [
     "Bubble Keychain", "Puffy Keychain", "Glam Keychain", "Sweet Keychain", "Teachy Keychain", "Happy Keychain",
     "Pasha Keychain", "Love Candy Steel Tumbler", "Hearts & Kisses Water Bottle", "Love & Sip Tumbler",
@@ -57,27 +54,17 @@ DATES = {
     "autumn": "Autumn", "winter": "Winter", "none": ""
 }
 
-# === FUNCIONES PRINCIPALES ===
-
 def start(update: Update, context: CallbackContext):
-    update.message.reply_text("🏋 ESTE ES EL BOT NUEVO 100% CON PRODUCTOS REALES ✨")
+    update.message.reply_text("🧁 ESTE ES EL BOT NUEVO 100% CON PRODUCTOS REALES ✨")
 
 def check(update: Update, context: CallbackContext):
     update.message.reply_text("✨ El bot está funcionando y estás usando la versión actualizada con catálogo real.")
 
 def handle_media(update: Update, context: CallbackContext):
     uid = update.message.from_user.id
-    msg_id = update.message.message_id
-    if uid in user_context and user_context[uid].get("last_msg") == msg_id:
-        return
-    try:
-        media = update.message.photo[-1].file_id if update.message.photo else update.message.video.file_id
-        mtype = "photo" if update.message.photo else "video"
-    except Exception as e:
-        update.message.reply_text("⚠️ No se pudo procesar la imagen/video.")
-        print(f"Media error: {e}")
-        return
-    user_context[uid] = {"file": media, "type": mtype, "last_msg": msg_id}
+    media = update.message.photo[-1].file_id if update.message.photo else update.message.video.file_id
+    mtype = "photo" if update.message.photo else "video"
+    user_context[uid] = {"file": media, "type": mtype}
     kb = [[InlineKeyboardButton(cat, callback_data=f"cat|{cat}")] for cat in CATEGORIES]
     update.message.reply_text("✨ Choose your exact product:", reply_markup=InlineKeyboardMarkup(kb))
 
@@ -129,13 +116,18 @@ def send_caption(uid, context: CallbackContext):
             model="gpt-4",
             messages=[{"role": "user", "content": prompt}]
         )
-        caption = response.choices[0].message.content.strip()
+        raw = response.choices[0].message.content.strip()
+        lines = [line for line in raw.splitlines() if "english" not in line.lower() and "spanish" not in line.lower()]
+        caption = "\n".join(lines).strip()
     except Exception as e:
+        import traceback
         print(f"❌ Error generando caption: {e}")
+        traceback.print_exc()
         caption = "⚠️ Error generating caption. Please try again."
 
     kb = [[InlineKeyboardButton("✅ Approve", callback_data="app"), InlineKeyboardButton("❌ Reject", callback_data="rej")]]
     markup = InlineKeyboardMarkup(kb)
+
     bot = context.bot
     if mtype == "photo":
         bot.send_photo(uid, photo=file_id, caption=caption, reply_markup=markup)
@@ -149,7 +141,6 @@ def approve_reject(update: Update, context: CallbackContext):
     q.edit_message_text(text=text)
 
 def main():
-    print("🤖 Iniciando Pasha Love Bot...")
     updater = Updater(TELEGRAM_TOKEN, use_context=True)
     dp = updater.dispatcher
     dp.add_handler(CommandHandler("start", start))
@@ -158,7 +149,7 @@ def main():
     dp.add_handler(CallbackQueryHandler(category_handler, pattern="^cat\\|"))
     dp.add_handler(CallbackQueryHandler(date_handler, pattern="^date\\|"))
     dp.add_handler(CallbackQueryHandler(approve_reject, pattern="^(app|rej)$"))
-    print("🌸 PASHABOT ACTUALIZADO Y LISTO 🌸")
+    print("🌸 PASHABOT ACTUALIZADO: catálogo real y sin música 🌸")
     updater.start_polling()
     updater.idle()
 
