@@ -1,8 +1,10 @@
 import os
 import random
+import requests
 from datetime import datetime
-from bs4 import BeautifulSoup
+from pathlib import Path
 from dotenv import load_dotenv
+from bs4 import BeautifulSoup
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler, CallbackContext
 from openai import OpenAI
@@ -10,6 +12,7 @@ from openai import OpenAI
 # Cargar variables del archivo .env
 load_dotenv()
 
+# API Tokens desde .env
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=OPENAI_API_KEY)
@@ -116,14 +119,9 @@ def send_caption(uid, context: CallbackContext):
             model="gpt-4",
             messages=[{"role": "user", "content": prompt}]
         )
-        raw = response.choices[0].message.content.strip()
-        lines = [line for line in raw.splitlines() if "english" not in line.lower() and "spanish" not in line.lower()]
-        caption = "\n".join(lines).strip()
+        caption = response.choices[0].message.content.strip()
     except Exception as e:
-        import traceback
-        print(f"❌ Error generando caption: {e}")
-        traceback.print_exc()
-        caption = "⚠️ Error generating caption. Please try again."
+        caption = f"⚠️ Error generating caption: {e}"
 
     kb = [[InlineKeyboardButton("✅ Approve", callback_data="app"), InlineKeyboardButton("❌ Reject", callback_data="rej")]]
     markup = InlineKeyboardMarkup(kb)
@@ -149,7 +147,7 @@ def main():
     dp.add_handler(CallbackQueryHandler(category_handler, pattern="^cat\\|"))
     dp.add_handler(CallbackQueryHandler(date_handler, pattern="^date\\|"))
     dp.add_handler(CallbackQueryHandler(approve_reject, pattern="^(app|rej)$"))
-    print("🌸 PASHABOT ACTUALIZADO: catálogo real y sin música 🌸")
+    print("🌸 PASHABOT ACTUALIZADO: catálogo real y usando GPT-4 nuevo 🌸")
     updater.start_polling()
     updater.idle()
 
