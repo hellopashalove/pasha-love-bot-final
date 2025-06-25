@@ -1,22 +1,18 @@
 import os
 import random
-import requests
 from datetime import datetime
-from pathlib import Path
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler, CallbackContext
 from openai import OpenAI
 
-# Cargar variables del archivo .env
+# Cargar variables de entorno
 load_dotenv()
-
-# API Tokens desde .env
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-client = OpenAI(api_key=OPENAI_API_KEY)
 
+client = OpenAI(api_key=OPENAI_API_KEY)
 user_context = {}
 
 CATEGORIES = [
@@ -52,9 +48,9 @@ CATEGORY_DESCRIPTIONS = {
 }
 
 DATES = {
-    "02-14": "Valentine’s Day", "05-10": "Mother’s Day", "06-17": "Father’s Day", "10-31": "Halloween",
-    "12-25": "Christmas", "01-01": "New Year", "spring": "Spring", "summer": "Summer",
-    "autumn": "Autumn", "winter": "Winter", "none": ""
+    "02-14": "Valentine’s Day", "05-10": "Mother’s Day", "06-17": "Father’s Day",
+    "10-31": "Halloween", "12-25": "Christmas", "01-01": "New Year",
+    "spring": "Spring", "summer": "Summer", "autumn": "Autumn", "winter": "Winter", "none": ""
 }
 
 def start(update: Update, context: CallbackContext):
@@ -114,6 +110,7 @@ def send_caption(uid, context: CallbackContext):
         f"Include English hashtags, then Spanish hashtags. Add emojis and keep it super aesthetic.\n"
         f"Do NOT say 'English:' or 'Spanish:'. Just flow like a real creator post."
     )
+
     try:
         response = client.chat.completions.create(
             model="gpt-4",
@@ -147,7 +144,7 @@ def main():
     dp.add_handler(CallbackQueryHandler(category_handler, pattern="^cat\\|"))
     dp.add_handler(CallbackQueryHandler(date_handler, pattern="^date\\|"))
     dp.add_handler(CallbackQueryHandler(approve_reject, pattern="^(app|rej)$"))
-    print("🌸 PASHABOT ACTUALIZADO: catálogo real y usando GPT-4 nuevo 🌸")
+    print("🌸 BOT CARGADO Y LISTO CON GPT-4 🌸")
     updater.start_polling()
     updater.idle()
 
